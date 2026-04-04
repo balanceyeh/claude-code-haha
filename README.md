@@ -12,6 +12,10 @@
 
 </div>
 
+<p align="center">
+  <img src="docs/images/banner.jpg" alt="Claude Code Haha Banner" width="800">
+</p>
+
 基于 Claude Code 泄露源码修复的**本地可运行版本**，支持接入任意 Anthropic 兼容 API（如 MiniMax、OpenRouter 等）。
 
 > 原始泄露源码无法直接运行。本仓库修复了启动链路中的多个阻塞问题，使完整的 Ink TUI 交互界面可以在本地工作。

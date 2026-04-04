@@ -12,6 +12,10 @@
 
 </div>
 
+<p align="center">
+  <img src="docs/images/banner.jpg" alt="Claude Code Haha Banner" width="800">
+</p>
+
 A **locally runnable version** repaired from the leaked Claude Code source, with support for any Anthropic-compatible API endpoint such as MiniMax and OpenRouter.
 
 > The original leaked source does not run as-is. This repository fixes multiple blocking issues in the startup path so the full Ink TUI can work locally.
