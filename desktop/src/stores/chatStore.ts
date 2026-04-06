@@ -202,7 +202,23 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         }
         break
 
-      case 'content_start':
+      case 'content_start': {
+        // Flush any accumulated streamingText as assistant_text BEFORE
+        // switching to the next block. This preserves intermediate text
+        // segments between tool calls (e.g. "项目已经有 node_modules，直接启动").
+        const pendingText = get().streamingText.trim()
+        if (pendingText) {
+          set((s) => ({
+            messages: [...s.messages, {
+              id: nextId(),
+              type: 'assistant_text',
+              content: pendingText,
+              timestamp: Date.now(),
+            }],
+            streamingText: '',
+          }))
+        }
+
         if (msg.blockType === 'text') {
           set({ streamingText: '', chatState: 'streaming', activeThinkingId: null })
         } else if (msg.blockType === 'tool_use') {
@@ -215,6 +231,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           })
         }
         break
+      }
 
       case 'content_delta':
         if (msg.text !== undefined) {
@@ -408,7 +425,14 @@ export function mapHistoryMessagesToUiMessages(messages: MessageEntry[]): UIMess
 
     if (msg.type === 'assistant' && Array.isArray(msg.content)) {
       for (const block of msg.content as AssistantHistoryBlock[]) {
-        if (block.type === 'text' && block.text) {
+        if (block.type === 'thinking' && block.thinking) {
+          uiMessages.push({
+            id: nextId(),
+            type: 'thinking',
+            content: block.thinking,
+            timestamp,
+          })
+        } else if (block.type === 'text' && block.text) {
           uiMessages.push({
             id: nextId(),
             type: 'assistant_text',

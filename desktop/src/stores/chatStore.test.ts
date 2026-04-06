@@ -57,7 +57,7 @@ describe('chatStore history mapping', () => {
     })
   })
 
-  it('drops persisted thinking blocks when restoring transcript history', () => {
+  it('preserves thinking blocks when restoring transcript history', () => {
     const messages: MessageEntry[] = [
       {
         id: 'assistant-1',
@@ -83,11 +83,11 @@ describe('chatStore history mapping', () => {
     const mapped = mapHistoryMessagesToUiMessages(messages)
 
     expect(mapped.map((message) => message.type)).toEqual([
+      'thinking',
       'assistant_text',
       'tool_use',
       'tool_result',
     ])
-    expect(mapped.some((message) => message.type === 'thinking')).toBe(false)
   })
 
   it('sends permission mode updates to the active session only', () => {
