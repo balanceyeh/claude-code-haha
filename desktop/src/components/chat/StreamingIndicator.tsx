@@ -1,4 +1,5 @@
 import { useChatStore } from '../../stores/chatStore'
+import { useTabStore } from '../../stores/tabStore'
 import { useTranslation } from '../../i18n'
 import type { TranslationKey } from '../../i18n/locales/en'
 
@@ -10,7 +11,12 @@ function formatElapsed(seconds: number): string {
 }
 
 export function StreamingIndicator() {
-  const { chatState, statusVerb, elapsedSeconds, tokenUsage } = useChatStore()
+  const activeTabId = useTabStore((s) => s.activeTabId)
+  const sessionState = useChatStore((s) => activeTabId ? s.sessions[activeTabId] : undefined)
+  const chatState = sessionState?.chatState ?? 'idle'
+  const statusVerb = sessionState?.statusVerb ?? ''
+  const elapsedSeconds = sessionState?.elapsedSeconds ?? 0
+  const tokenUsage = sessionState?.tokenUsage ?? { input_tokens: 0, output_tokens: 0 }
   const t = useTranslation()
 
   // Translate known server-sent verbs (e.g. "Thinking", "Task started")

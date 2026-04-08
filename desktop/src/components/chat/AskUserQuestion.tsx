@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useChatStore } from '../../stores/chatStore'
+import { useTabStore } from '../../stores/tabStore'
 import { useTranslation } from '../../i18n'
 import { Button } from '../shared/Button'
 
@@ -47,6 +48,7 @@ function parseInput(input: unknown): Question[] {
 
 export function AskUserQuestion({ toolUseId: _toolUseId, input }: Props) {
   const { sendMessage } = useChatStore()
+  const activeTabId = useTabStore((s) => s.activeTabId)
   const t = useTranslation()
   const questions = parseInput(input)
   const [activeTab, setActiveTab] = useState(0)
@@ -82,7 +84,8 @@ export function AskUserQuestion({ toolUseId: _toolUseId, input }: Props) {
     if (!response) return
 
     setSubmitted(true)
-    sendMessage(response)
+    if (!activeTabId) return
+    sendMessage(activeTabId, response)
   }
 
   // All questions must be answered (via selection or free text) to enable submit

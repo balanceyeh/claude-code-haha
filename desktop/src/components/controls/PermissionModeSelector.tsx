@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { useChatStore } from '../../stores/chatStore'
 import { useSessionStore } from '../../stores/sessionStore'
+import { useTabStore } from '../../stores/tabStore'
 import { useTranslation } from '../../i18n'
 import type { PermissionMode } from '../../types/settings'
 
@@ -26,6 +27,7 @@ export function PermissionModeSelector({ workDir: workDirProp, value, onChange }
   const t = useTranslation()
   const { permissionMode: storeMode, setPermissionMode } = useSettingsStore()
   const setSessionPermissionMode = useChatStore((s) => s.setSessionPermissionMode)
+  const activeTabId = useTabStore((s) => s.activeTabId)
   const sessions = useSessionStore((s) => s.sessions)
   const activeSessionId = useSessionStore((s) => s.activeSessionId)
   const [open, setOpen] = useState(false)
@@ -126,7 +128,7 @@ export function PermissionModeSelector({ workDir: workDirProp, value, onChange }
                   onChange?.(item.value)
                 } else {
                   void setPermissionMode(item.value)
-                  setSessionPermissionMode(item.value)
+                  if (activeTabId) setSessionPermissionMode(activeTabId, item.value)
                 }
                 setOpen(false)
               }}
@@ -208,7 +210,7 @@ export function PermissionModeSelector({ workDir: workDirProp, value, onChange }
                     onChange?.('bypassPermissions')
                   } else {
                     void setPermissionMode('bypassPermissions')
-                    setSessionPermissionMode('bypassPermissions')
+                    if (activeTabId) setSessionPermissionMode(activeTabId, 'bypassPermissions')
                   }
                   setConfirmDialog(false)
                 }}

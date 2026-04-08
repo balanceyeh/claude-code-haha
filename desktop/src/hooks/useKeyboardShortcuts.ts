@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useSessionStore } from '../stores/sessionStore'
 import { useChatStore } from '../stores/chatStore'
+import { useTabStore } from '../stores/tabStore'
 import { useUIStore } from '../stores/uiStore'
 
 export function useKeyboardShortcuts() {
@@ -9,7 +10,8 @@ export function useKeyboardShortcuts() {
   const closeModal = useUIStore((s) => s.closeModal)
   const activeModal = useUIStore((s) => s.activeModal)
   const stopGeneration = useChatStore((s) => s.stopGeneration)
-  const chatState = useChatStore((s) => s.chatState)
+  const activeTabId = useTabStore((s) => s.activeTabId)
+  const chatState = useChatStore((s) => activeTabId ? s.sessions[activeTabId]?.chatState ?? 'idle' : 'idle')
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -38,14 +40,14 @@ export function useKeyboardShortcuts() {
 
       // Cmd+. — Stop generation
       if (meta && e.key === '.') {
-        if (chatState !== 'idle') {
+        if (chatState !== 'idle' && activeTabId) {
           e.preventDefault()
-          stopGeneration()
+          stopGeneration(activeTabId)
         }
       }
     }
 
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [activeModal, chatState, closeModal, setActiveSession, setActiveView, stopGeneration])
+  }, [activeModal, activeTabId, chatState, closeModal, setActiveSession, setActiveView, stopGeneration])
 }

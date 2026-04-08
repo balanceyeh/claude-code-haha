@@ -434,6 +434,15 @@ export const en = {
   'serverVerb.Thinking': 'Thinking',
   'serverVerb.Task started': 'Task started',
   'serverVerb.Task in progress': 'Task in progress',
+
+  // ─── Tabs ──────────────────────────────────────
+  'tabs.close': 'Close',
+  'tabs.closeOthers': 'Close Others',
+  'tabs.closeRight': 'Close to the Right',
+  'tabs.closeConfirmTitle': 'Session Running',
+  'tabs.closeConfirmMessage': 'This session is still running. What would you like to do?',
+  'tabs.closeConfirmKeep': 'Keep Running',
+  'tabs.closeConfirmStop': 'Stop & Close',
 } as const
 
 export type TranslationKey = keyof typeof en

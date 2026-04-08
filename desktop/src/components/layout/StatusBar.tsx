@@ -1,11 +1,13 @@
 import { useSettingsStore } from '../../stores/settingsStore'
 import { useChatStore } from '../../stores/chatStore'
 import { useSessionStore } from '../../stores/sessionStore'
+import { useTabStore } from '../../stores/tabStore'
 import { useTranslation } from '../../i18n'
 
 export function StatusBar() {
   const { currentModel } = useSettingsStore()
-  const { connectionState } = useChatStore()
+  const activeTabId = useTabStore((s) => s.activeTabId)
+  const connectionState = useChatStore((s) => activeTabId ? s.sessions[activeTabId]?.connectionState ?? 'disconnected' : 'disconnected')
   const { sessions, activeSessionId } = useSessionStore()
   const t = useTranslation()
 

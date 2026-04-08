@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from '../../i18n'
 import { useChatStore } from '../../stores/chatStore'
+import { useTabStore } from '../../stores/tabStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { sessionsApi } from '../../api/sessions'
 import { PermissionModeSelector } from '../controls/PermissionModeSelector'
@@ -43,7 +44,11 @@ export function ChatInput() {
   const slashMenuRef = useRef<HTMLDivElement>(null)
   const fileSearchRef = useRef<FileSearchMenuHandle>(null)
   const slashItemRefs = useRef<(HTMLButtonElement | null)[]>([])
-  const { sendMessage, chatState, stopGeneration, slashCommands } = useChatStore()
+  const { sendMessage, stopGeneration } = useChatStore()
+  const activeTabId = useTabStore((s) => s.activeTabId)
+  const sessionState = useChatStore((s) => activeTabId ? s.sessions[activeTabId] : undefined)
+  const chatState = sessionState?.chatState ?? 'idle'
+  const slashCommands = sessionState?.slashCommands ?? []
   const activeSessionId = useSessionStore((state) => state.activeSessionId)
   const activeSession = useSessionStore((state) => state.sessions.find((session) => session.id === state.activeSessionId) ?? null)
   const [gitInfo, setGitInfo] = useState<GitInfo | null>(null)
@@ -213,7 +218,7 @@ export function ChatInput() {
       mimeType: attachment.mimeType,
     }))
 
-    sendMessage(text, attachmentPayload)
+    sendMessage(activeTabId!, text, attachmentPayload)
     setInput('')
     setAttachments([])
     setSlashMenuOpen(false)
@@ -494,7 +499,7 @@ export function ChatInput() {
             <div className="flex items-center gap-2">
               <ModelSelector />
               <button
-                onClick={isActive ? stopGeneration : handleSubmit}
+                onClick={isActive ? () => stopGeneration(activeTabId!) : handleSubmit}
                 disabled={!isActive && !canSubmit}
                 title={isActive ? t('chat.stopTitle') : undefined}
                 className={`flex w-[112px] items-center justify-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all hover:opacity-90 disabled:opacity-30 ${

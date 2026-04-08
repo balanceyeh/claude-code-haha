@@ -4,6 +4,8 @@ import { useUIStore } from '../../stores/uiStore'
 import { useTranslation } from '../../i18n'
 import { ProjectFilter } from './ProjectFilter'
 import type { SessionListItem } from '../../types/session'
+import { useTabStore } from '../../stores/tabStore'
+import { useChatStore } from '../../stores/chatStore'
 
 const isTauri = typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window || '__TAURI__' in window)
 
@@ -205,7 +207,11 @@ export function Sidebar() {
                     />
                   ) : (
                     <button
-                      onClick={() => { setActiveView('code'); setActiveSession(session.id) }}
+                      onClick={() => {
+                        setActiveView('code')
+                        useTabStore.getState().openTab(session.id, session.title)
+                        useChatStore.getState().connectToSession(session.id)
+                      }}
                       onContextMenu={(e) => handleContextMenu(e, session.id)}
                       className={`
                         w-full flex items-center gap-2 pl-4 pr-3 py-1.5 text-sm text-left rounded-[var(--radius-md)] transition-colors duration-200 group

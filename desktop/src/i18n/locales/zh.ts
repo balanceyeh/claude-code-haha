@@ -436,4 +436,13 @@ export const zh: Record<TranslationKey, string> = {
   'serverVerb.Thinking': '思考中',
   'serverVerb.Task started': '任务已启动',
   'serverVerb.Task in progress': '任务进行中',
+
+  // ─── Tabs ──────────────────────────────────────
+  'tabs.close': '关闭',
+  'tabs.closeOthers': '关闭其他',
+  'tabs.closeRight': '关闭右侧',
+  'tabs.closeConfirmTitle': '会话运行中',
+  'tabs.closeConfirmMessage': '此会话仍在运行，你想要怎么做？',
+  'tabs.closeConfirmKeep': '保持运行',
+  'tabs.closeConfirmStop': '停止并关闭',
 }

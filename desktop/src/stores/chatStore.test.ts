@@ -32,8 +32,39 @@ vi.mock('./teamStore', () => ({
   },
 }))
 
+vi.mock('./tabStore', () => ({
+  useTabStore: {
+    getState: () => ({
+      updateTabStatus: vi.fn(),
+      updateTabTitle: vi.fn(),
+    }),
+  },
+}))
+
+vi.mock('./sessionStore', () => ({
+  useSessionStore: {
+    getState: () => ({
+      updateSessionTitle: vi.fn(),
+    }),
+  },
+}))
+
+vi.mock('./cliTaskStore', () => ({
+  useCLITaskStore: {
+    getState: () => ({
+      fetchSessionTasks: vi.fn(),
+      tasks: [],
+      clearTasks: vi.fn(),
+      setTasksFromTodos: vi.fn(),
+      markCompletedAndDismissed: vi.fn(),
+      refreshTasks: vi.fn(),
+    }),
+  },
+}))
+
 import { mapHistoryMessagesToUiMessages, useChatStore } from './chatStore'
 
+const TEST_SESSION_ID = 'test-session-1'
 const initialState = useChatStore.getState()
 
 describe('chatStore history mapping', () => {
@@ -41,19 +72,7 @@ describe('chatStore history mapping', () => {
     sendMock.mockReset()
     useChatStore.setState({
       ...initialState,
-      messages: [],
-      chatState: 'idle',
-      connectionState: 'disconnected',
-      streamingText: '',
-      streamingToolInput: '',
-      activeToolUseId: null,
-      activeToolName: null,
-      activeThinkingId: null,
-      pendingPermission: null,
-      tokenUsage: { input_tokens: 0, output_tokens: 0 },
-      elapsedSeconds: 0,
-      connectedSessionId: null,
-      slashCommands: [],
+      sessions: {},
     })
   })
 
@@ -95,7 +114,29 @@ describe('chatStore history mapping', () => {
   })
 
   it('keeps parent tool linkage for live tool events', () => {
-    useChatStore.getState().handleServerMessage({
+    // Initialize the session first
+    useChatStore.setState({
+      sessions: {
+        [TEST_SESSION_ID]: {
+          messages: [],
+          chatState: 'idle',
+          connectionState: 'connected',
+          streamingText: '',
+          streamingToolInput: '',
+          activeToolUseId: null,
+          activeToolName: null,
+          activeThinkingId: null,
+          pendingPermission: null,
+          tokenUsage: { input_tokens: 0, output_tokens: 0 },
+          elapsedSeconds: 0,
+          statusVerb: '',
+          slashCommands: [],
+          elapsedTimer: null,
+        },
+      },
+    })
+
+    useChatStore.getState().handleServerMessage(TEST_SESSION_ID, {
       type: 'tool_use_complete',
       toolName: 'Read',
       toolUseId: 'tool-1',
@@ -103,7 +144,7 @@ describe('chatStore history mapping', () => {
       parentToolUseId: 'agent-1',
     })
 
-    useChatStore.getState().handleServerMessage({
+    useChatStore.getState().handleServerMessage(TEST_SESSION_ID, {
       type: 'tool_result',
       toolUseId: 'tool-1',
       content: 'ok',
@@ -111,7 +152,7 @@ describe('chatStore history mapping', () => {
       parentToolUseId: 'agent-1',
     })
 
-    expect(useChatStore.getState().messages).toMatchObject([
+    expect(useChatStore.getState().sessions[TEST_SESSION_ID]?.messages).toMatchObject([
       {
         type: 'tool_use',
         toolUseId: 'tool-1',
@@ -126,13 +167,32 @@ describe('chatStore history mapping', () => {
   })
 
   it('sends permission mode updates to the active session only', () => {
-    useChatStore.getState().setSessionPermissionMode('acceptEdits')
+    useChatStore.getState().setSessionPermissionMode('nonexistent-session', 'acceptEdits')
     expect(sendMock).not.toHaveBeenCalled()
 
-    useChatStore.setState({ connectedSessionId: 'session-1' })
-    useChatStore.getState().setSessionPermissionMode('acceptEdits')
+    useChatStore.setState({
+      sessions: {
+        'session-1': {
+          messages: [],
+          chatState: 'idle',
+          connectionState: 'connected',
+          streamingText: '',
+          streamingToolInput: '',
+          activeToolUseId: null,
+          activeToolName: null,
+          activeThinkingId: null,
+          pendingPermission: null,
+          tokenUsage: { input_tokens: 0, output_tokens: 0 },
+          elapsedSeconds: 0,
+          statusVerb: '',
+          slashCommands: [],
+          elapsedTimer: null,
+        },
+      },
+    })
+    useChatStore.getState().setSessionPermissionMode('session-1', 'acceptEdits')
 
-    expect(sendMock).toHaveBeenCalledWith({
+    expect(sendMock).toHaveBeenCalledWith('session-1', {
       type: 'set_permission_mode',
       mode: 'acceptEdits',
     })

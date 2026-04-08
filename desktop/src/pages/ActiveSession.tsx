@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react'
+import { useTabStore } from '../stores/tabStore'
 import { useSessionStore } from '../stores/sessionStore'
 import { useChatStore } from '../stores/chatStore'
 import { MessageList } from '../components/chat/MessageList'
@@ -7,18 +8,20 @@ import { TeamStatusBar } from '../components/teams/TeamStatusBar'
 import { SessionTaskBar } from '../components/chat/SessionTaskBar'
 
 export function ActiveSession() {
-  const activeSessionId = useSessionStore((s) => s.activeSessionId)
+  const activeTabId = useTabStore((s) => s.activeTabId)
   const sessions = useSessionStore((s) => s.sessions)
   const connectToSession = useChatStore((s) => s.connectToSession)
-  const { chatState, tokenUsage } = useChatStore()
+  const sessionState = useChatStore((s) => activeTabId ? s.sessions[activeTabId] : undefined)
+  const chatState = sessionState?.chatState ?? 'idle'
+  const tokenUsage = sessionState?.tokenUsage ?? { input_tokens: 0, output_tokens: 0 }
 
-  const session = sessions.find((s) => s.id === activeSessionId)
+  const session = sessions.find((s) => s.id === activeTabId)
 
   useEffect(() => {
-    if (activeSessionId) {
-      connectToSession(activeSessionId)
+    if (activeTabId) {
+      connectToSession(activeTabId)
     }
-  }, [activeSessionId, connectToSession])
+  }, [activeTabId, connectToSession])
 
   const isActive = chatState !== 'idle'
   const totalTokens = tokenUsage.input_tokens + tokenUsage.output_tokens
@@ -31,6 +34,8 @@ export function ActiveSession() {
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`
     return `${Math.floor(diff / 86400000)}d ago`
   }, [session?.modifiedAt])
+
+  if (!activeTabId) return null
 
   return (
     <div className="flex-1 flex flex-col relative overflow-hidden bg-background text-on-surface">

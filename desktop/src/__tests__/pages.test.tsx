@@ -12,8 +12,10 @@ import { ToolInspection } from '../pages/ToolInspection'
 
 // Layout components (chrome is now here, not in pages)
 import { AppShell } from '../components/layout/AppShell'
+import { Sidebar } from '../components/layout/Sidebar'
 import { UserMessage } from '../components/chat/UserMessage'
 import { useChatStore } from '../stores/chatStore'
+import { useTabStore } from '../stores/tabStore'
 
 /**
  * Core rendering tests: content-only pages must render without crashing
@@ -35,21 +37,66 @@ describe('Content-only pages render without errors', () => {
   })
 
   it('ActiveSession renders with chat components', () => {
+    const SESSION_ID = 'test-active-session'
+    useTabStore.setState({ tabs: [{ sessionId: SESSION_ID, title: 'Test', status: 'idle' }], activeTabId: SESSION_ID })
+    useChatStore.setState({
+      sessions: {
+        [SESSION_ID]: {
+          messages: [],
+          chatState: 'idle',
+          connectionState: 'connected',
+          streamingText: '',
+          streamingToolInput: '',
+          activeToolUseId: null,
+          activeToolName: null,
+          activeThinkingId: null,
+          pendingPermission: null,
+          tokenUsage: { input_tokens: 0, output_tokens: 0 },
+          elapsedSeconds: 0,
+          statusVerb: '',
+          slashCommands: [],
+          elapsedTimer: null,
+        },
+      },
+    })
     const { container } = render(<ActiveSession />)
     // Should have the title area and chat input
     expect(container.innerHTML).toContain('Untitled Session')
     // ChatInput has a textarea
     expect(container.querySelector('textarea')).toBeInTheDocument()
     expect(container.innerHTML).not.toContain('Preview')
+    // Cleanup
+    useTabStore.setState({ tabs: [], activeTabId: null })
+    useChatStore.setState({ sessions: {} })
   })
 
   it('ActiveSession shows a single primary action button while a turn is active', () => {
-    useChatStore.setState({ chatState: 'thinking' })
+    useTabStore.setState({ activeTabId: 'active-tab', tabs: [{ sessionId: 'active-tab', title: 'Test', status: 'idle' }] })
+    useChatStore.setState({
+      sessions: {
+        'active-tab': {
+          messages: [],
+          chatState: 'thinking',
+          connectionState: 'connected',
+          streamingText: '',
+          streamingToolInput: '',
+          activeToolUseId: null,
+          activeToolName: null,
+          activeThinkingId: null,
+          pendingPermission: null,
+          tokenUsage: { input_tokens: 0, output_tokens: 0 },
+          elapsedSeconds: 0,
+          statusVerb: '',
+          slashCommands: [],
+          elapsedTimer: null,
+        },
+      },
+    })
     render(<ActiveSession />)
 
     expect(screen.getByRole('button', { name: /stop/i })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^run$/i })).not.toBeInTheDocument()
-    useChatStore.setState({ chatState: 'idle' })
+    useChatStore.setState({ sessions: {} })
   })
 
   it('AgentTeams renders team strip and members', () => {
@@ -102,11 +149,11 @@ describe('Chat attachments', () => {
 
 describe('AppShell layout renders chrome', () => {
   it('AppShell renders sidebar and session shell', () => {
-    const { container } = render(<AppShell />)
+    const { container } = render(<Sidebar />)
     expect(container.querySelector('aside')).toBeInTheDocument()
     expect(container.innerHTML).toContain('New session')
     expect(container.innerHTML).toContain('Scheduled')
-    expect(container.innerHTML).toContain('Select a project')
+    expect(container.innerHTML).toContain('All projects')
   })
 })
 

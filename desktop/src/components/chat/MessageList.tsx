@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { useChatStore } from '../../stores/chatStore'
+import { useTabStore } from '../../stores/tabStore'
 import { useTranslation } from '../../i18n'
 import type { TranslationKey } from '../../i18n/locales/en'
 import { UserMessage } from './UserMessage'
@@ -63,7 +64,12 @@ export function buildRenderItems(messages: UIMessage[], toolUseIds: Set<string>)
 }
 
 export function MessageList() {
-  const { messages, chatState, streamingText, activeThinkingId } = useChatStore()
+  const activeTabId = useTabStore((s) => s.activeTabId)
+  const sessionState = useChatStore((s) => activeTabId ? s.sessions[activeTabId] : undefined)
+  const messages = sessionState?.messages ?? []
+  const chatState = sessionState?.chatState ?? 'idle'
+  const streamingText = sessionState?.streamingText ?? ''
+  const activeThinkingId = sessionState?.activeThinkingId ?? null
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {

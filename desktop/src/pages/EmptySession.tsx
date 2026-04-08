@@ -3,6 +3,7 @@ import { useTranslation } from '../i18n'
 import { useSessionStore } from '../stores/sessionStore'
 import { useChatStore } from '../stores/chatStore'
 import { useUIStore } from '../stores/uiStore'
+import { useTabStore } from '../stores/tabStore'
 import { DirectoryPicker } from '../components/shared/DirectoryPicker'
 import { PermissionModeSelector } from '../components/controls/PermissionModeSelector'
 import { ModelSelector } from '../components/controls/ModelSelector'
@@ -122,6 +123,7 @@ export function EmptySession() {
     try {
       const sessionId = await createSession(workDir || undefined)
       setActiveView('code')
+      useTabStore.getState().openTab(sessionId, 'New Session')
       connectToSession(sessionId)
       const attachmentPayload: AttachmentRef[] = attachments.map((attachment) => ({
         type: attachment.type,
@@ -129,7 +131,7 @@ export function EmptySession() {
         data: attachment.data,
         mimeType: attachment.mimeType,
       }))
-      sendMessage(text, attachmentPayload)
+      sendMessage(sessionId, text, attachmentPayload)
       setInput('')
       setAttachments([])
     } catch (error) {

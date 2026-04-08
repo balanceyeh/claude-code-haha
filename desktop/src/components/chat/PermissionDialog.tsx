@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useChatStore } from '../../stores/chatStore'
+import { useTabStore } from '../../stores/tabStore'
 import { useTranslation } from '../../i18n'
 import { Button } from '../shared/Button'
 import { DiffViewer } from './DiffViewer'
@@ -110,7 +111,9 @@ function renderPermissionPreview(toolName: string, input: unknown) {
 }
 
 export function PermissionDialog({ requestId, toolName, input, description }: Props) {
-  const { respondToPermission, pendingPermission } = useChatStore()
+  const { respondToPermission } = useChatStore()
+  const activeTabId = useTabStore((s) => s.activeTabId)
+  const pendingPermission = useChatStore((s) => activeTabId ? s.sessions[activeTabId]?.pendingPermission : undefined)
   const t = useTranslation()
   const isPending = pendingPermission?.requestId === requestId
   const [showRaw, setShowRaw] = useState(false)
@@ -223,7 +226,7 @@ export function PermissionDialog({ requestId, toolName, input, description }: Pr
           <Button
             variant="primary"
             size="sm"
-            onClick={() => respondToPermission(requestId, true)}
+            onClick={() => activeTabId && respondToPermission(activeTabId, requestId, true)}
             icon={
               <span className="material-symbols-outlined text-[14px]">check</span>
             }
@@ -233,7 +236,7 @@ export function PermissionDialog({ requestId, toolName, input, description }: Pr
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => respondToPermission(requestId, true, 'always')}
+            onClick={() => activeTabId && respondToPermission(activeTabId, requestId, true, 'always')}
             icon={
               <span className="material-symbols-outlined text-[14px]">verified</span>
             }
@@ -244,7 +247,7 @@ export function PermissionDialog({ requestId, toolName, input, description }: Pr
           <Button
             variant="danger"
             size="sm"
-            onClick={() => respondToPermission(requestId, false)}
+            onClick={() => activeTabId && respondToPermission(activeTabId, requestId, false)}
             icon={
               <span className="material-symbols-outlined text-[14px]">close</span>
             }
