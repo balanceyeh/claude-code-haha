@@ -1,6 +1,6 @@
 # Telegram 接入
 
-> Telegram Adapter 的实际接入说明，基于当前仓库代码，而不是旧 README。
+> Telegram Adapter 的接入教程。找 BotFather 拿 Token，桌面端填完配对即可。
 
 ## 适用场景
 
@@ -8,135 +8,62 @@ Telegram 方案适合个人私聊远程使用。当前实现只处理 `private c
 
 实现入口：`adapters/telegram/index.ts`
 
-## 启动前准备
+## 1. 创建 Telegram 机器人
 
-### 1. 创建 Bot
+在 Telegram 里搜索官方账号 **@BotFather**：
 
-在 Telegram 里找 `@BotFather`：
+![搜索 BotFather](../images/im/telegram/01-search-botfather.png)
 
-1. 发送 `/newbot`
-2. 按提示创建 bot
-3. 拿到 `Bot Token`
+给它发送 `/newbot`：
 
-### 2. 在 Desktop Webapp 里填写配置
+![发送 /newbot](../images/im/telegram/02-newbot-command.png)
 
-打开 `Settings -> IM 接入 -> Telegram`，填写：
+按提示走完三步：
 
-- `Bot Token`
-- `Allowed Users`，可选
-- 全局 `Default Project`
+- **取一个机器人名称**，例如 `ClaudeCodeHaha机器人`
+- **取一个机器人用户名**，要求全英文字母，且必须以 `_bot` 结尾，例如 `jiang_cc_hah_bot`
+- 创建成功后，复制 BotFather 返回的 **Bot Token**
 
-也可以直接写 `~/.claude/adapters.json`，但当前推荐从 Webapp 配。
+![复制 Bot Token](../images/im/telegram/03-bot-token.png)
 
-配置结构示例：
+## 2. 在 Claude Code Haha 桌面端填写
 
-```json
-{
-  "serverUrl": "ws://127.0.0.1:3456",
-  "defaultProjectDir": "/Users/me/workspace/my-project",
-  "telegram": {
-    "botToken": "123456:ABC-DEF...",
-    "allowedUsers": [123456789]
-  }
-}
-```
+### 2.1 填写 Bot Token
 
-环境变量优先级更高：
+打开桌面端 `设置 → IM 接入 → Telegram`，把上一步的 Bot Token 填进去：
 
-```bash
-export TELEGRAM_BOT_TOKEN="123456:ABC-DEF..."
-export ADAPTER_SERVER_URL="ws://127.0.0.1:3456"
-```
+![填写 Bot Token](../images/im/telegram/04-fill-bot-token.png)
 
-## 启动
+### 2.2 生成配对码
 
-```bash
-cd adapters
-bun install
-bun run telegram
-```
+点击「生成配对码」按钮，拿到 6 位配对码后点击保存：
 
-## 首次配对
+![生成配对码](../images/im/telegram/05-generate-pairing-code.png)
 
-Telegram 侧的授权入口不再只依赖 `allowedUsers`。
+## 3. 机器人与桌面端配对
 
-当前真实逻辑：
+随便给刚才创建的机器人发送一条消息，按提示输入配对码。看到下面的配对成功提示，就可以从手机 Telegram 远程驱动桌面端 Claude Code Haha 了：
 
-1. 在 Desktop Webapp 里生成配对码
-2. 去 Telegram 私聊 bot
-3. 把那 6 位码直接发给 bot
-4. adapter 调用 `tryPair(...)`
-5. 配对成功后，把当前 Telegram user 写进 `telegram.pairedUsers`
-
-特点：
-
-- 配对码 60 分钟过期
-- 配对成功后立即失效
-- 和飞书共用同一枚全局配对码
-- 连续输错有速率限制
-
-## 日常使用流程
-
-### 首次消息
-
-`adapters/telegram/index.ts` 的流程是：
-
-1. 校验是否私聊
-2. 去重
-3. 校验是否已授权
-4. 没有 session 时：
-   - 优先恢复 `adapter-sessions.json` 里的旧 session
-   - 否则用 `defaultProjectDir` 创建新 session
-   - 如果没配默认项目，则拉最近项目列表让你选
-
-### 项目选择
-
-当没有默认项目时，bot 会调用 `GET /api/sessions/recent-projects`，返回最近项目列表，并要求你回复编号。
-
-选中后：
-
-- adapter 用 `POST /api/sessions` 创建 session
-- 把 `chatId -> sessionId -> workDir` 写进 `~/.claude/adapter-sessions.json`
-- 后续消息继续复用
+![配对成功](../images/im/telegram/06-pair-success.png)
 
 ## 支持的命令
 
-### `/start`
-
-显示帮助和可用命令。
-
-### `/projects`
-
-切换项目，重新显示最近项目列表。
-
-### `/status`
-
-查看当前会话的项目、模型、运行状态和任务摘要。
-
-### `/clear`
-
-清空当前会话上下文，保留当前项目绑定。
-
-### `/new`
-
-清空当前 chat 绑定的 session，并重新选择项目。
-
-### `/help`
-
-显示当前可用命令。
-
-### `/stop`
-
-向当前 session 发送 `stop_generation`。
+- `/start` — 显示帮助和可用命令
+- `/projects` — 切换项目，重新显示最近项目列表
+- `/status` — 查看当前会话的项目、模型、运行状态和任务摘要
+- `/clear` — 清空当前会话上下文，保留项目绑定
+- `/new` — 清空当前 chat 绑定的 session，并重新选择项目
+- `/help` — 显示当前可用命令
+- `/stop` — 向当前 session 发送 `stop_generation`
 
 ## 权限审批
 
-当 Claude 需要敏感权限时，Telegram adapter 会发带按钮的消息：
+当 Claude 请求敏感权限时，Telegram adapter 会发带按钮的消息：
 
 - `✅ 允许`
 - `❌ 拒绝`
 
-点击后，adapter 会把结果通过 `permission_response` 发回 Desktop server。
+点击后 adapter 会把结果通过 `permission_response` 回传给 Desktop server。
 
 ## 返回消息的表现
 
@@ -152,6 +79,23 @@ Telegram 侧有一层流式缓冲：
 - `adapters/common/format.ts`
 - `adapters/common/ws-bridge.ts`
 
+## 启动 adapter
+
+桌面端会自动把 adapter 作为 sidecar 拉起。如果你在本地开发，需要手动启动：
+
+```bash
+cd adapters
+bun install
+bun run telegram
+```
+
+## 环境变量覆盖（可选）
+
+```bash
+export TELEGRAM_BOT_TOKEN="123456:ABC-DEF..."
+export ADAPTER_SERVER_URL="ws://127.0.0.1:3456"
+```
+
 ## 常见问题
 
 ### bot 启动时报缺少 token
@@ -160,16 +104,14 @@ Telegram 侧有一层流式缓冲：
 
 ### 能打开设置页但 bot 不工作
 
-Webapp 只负责配置，不会自动拉起 `bun run telegram`。
+Webapp 只负责配置，不会自动拉起 `bun run telegram`（桌面端发布版会通过 sidecar 自动拉起）。
 
 ### 发消息提示未授权
 
-优先检查：
-
-- 是否已经在 Webapp 里生成配对码
-- 配对码是否过期
+- 是否已经在桌面端生成配对码
+- 配对码是否在 60 分钟有效期内
 - 是否把码发到了正确的 bot 私聊
-- `allowedUsers` / `pairedUsers` 是否真的包含当前账号
+- 连续输错会有速率限制，等几分钟再试
 
 ### 每次重启后会话丢失
 
